@@ -3,10 +3,14 @@
 	let value = $state('console.log("Hello World!");');
 
 	$effect(() => {
-		console.log(value);
-		console.log('something else');
-		console.log('again');
+		// console.log(value);
 	});
 </script>
 
-<CodeEditor bind:value language="typescript" />
+<div class="h-screen w-screen">
+	<CodeEditor bind:value language="typescript" />
+</div>
+
+<style lang="postcss">
+	/* Empty style tag keeps HMR working */
+</style>

@@ -49,7 +49,7 @@
 	});
 </script>
 
-<div class="h-100 w-full" bind:this={editorContainer}></div>
+<div class="h-full w-full" bind:this={editorContainer}></div>
 
 <style lang="postcss">
 	/* Empty style tag keeps HMR working */
