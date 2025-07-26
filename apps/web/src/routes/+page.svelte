@@ -1,2 +1,16 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script>
+	import CodeEditor from '$lib/components/CodeEditor.svelte';
+	let value = $state('console.log("Hello World!");');
+
+	$effect(() => {
+		// console.log(value);
+	});
+</script>
+
+<div class="h-screen w-screen">
+	<CodeEditor bind:value language="typescript" />
+</div>
+
+<style lang="postcss">
+	/* Empty style tag keeps HMR working */
+</style>
