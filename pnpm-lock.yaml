@@ -17,7 +17,7 @@ importers:
   apps/api:
     dependencies:
       '@linterview/database':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/database
       '@nestjs/common':
         specifier: ^11.0.1
