@@ -1,0 +1,27 @@
+{
+  "name": "@linterview/database",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "pnpm generate",
+    "generate": "prisma generate --no-engine",
+    "migrate": "prisma migrate dev",
+    "deploy": "prisma migrate deploy",
+    "studio": "prisma studio"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "prisma": "catalog:prisma",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.1",
+  "dependencies": {
+    "@prisma/client": "6.12.0"
+  }
+}
