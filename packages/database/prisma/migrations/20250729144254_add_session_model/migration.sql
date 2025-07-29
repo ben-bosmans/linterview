@@ -2,9 +2,9 @@
 CREATE TABLE "public"."session" (
     "id" SERIAL NOT NULL,
     "user_id" TEXT NOT NULL,
-    "refreshTokenHash" TEXT NOT NULL,
+    "refresh_token_hash" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );

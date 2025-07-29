@@ -28,9 +28,9 @@ model Session {
   id               Int      @id @default(autoincrement())
   user             User     @relation(fields: [userId], references: [id])
   userId           String   @map("user_id")
-  refreshTokenHash String
+  refreshTokenHash String   @map("refresh_token_hash")
   createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("session")
 }
