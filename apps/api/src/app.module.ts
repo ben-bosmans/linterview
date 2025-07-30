@@ -16,7 +16,6 @@ import { ZodSerializerInterceptor } from './common/interceptors/zod-serializer.i
       validate: validateConfig,
     }),
   ],
-  controllers: [],
   providers: [
     {
       provide: APP_INTERCEPTOR,
