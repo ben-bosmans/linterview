@@ -3,6 +3,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { validateConfig } from './common/config/schema.config';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ZodSerializerInterceptor } from './common/interceptors/zod-serializer.interceptor';
 
 @Module({
   imports: [
@@ -15,6 +17,11 @@ import { PrismaModule } from './modules/prisma/prisma.module';
     }),
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ZodSerializerInterceptor,
+    },
+  ],
 })
 export class AppModule {}

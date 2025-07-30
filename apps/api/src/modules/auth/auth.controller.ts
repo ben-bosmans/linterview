@@ -5,12 +5,15 @@ import {
   signUpSchema,
   SignInDto,
   signInSchema,
+  accessTokenSchema,
+  AccessTokenDto,
 } from '@linterview/dto';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import { Response } from 'express';
 import { REFRESH_TOKEN_COOKIE_MAX_AGE } from './constants/auth.constants';
 import { ConfigService } from '@nestjs/config';
 import { Config } from 'src/common/config/schema.config';
+import { SerializeResponse } from 'src/common/decorators/serialize-response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -20,21 +23,25 @@ export class AuthController {
   ) {}
 
   @Post('signup')
+  @SerializeResponse(accessTokenSchema)
   async signUp(
     @Body(new ZodValidationPipe(signUpSchema)) body: SignUpDto,
     @Res({ passthrough: true }) response: Response,
-  ) {
+  ): Promise<AccessTokenDto> {
     const tokens = await this.authService.signUp(body.email, body.password);
     this.setRefreshTokenCookie(response, tokens.refreshToken);
+    return tokens;
   }
 
   @Post('signin')
+  @SerializeResponse(accessTokenSchema)
   async signIn(
     @Body(new ZodValidationPipe(signInSchema)) body: SignInDto,
     @Res({ passthrough: true }) response: Response,
-  ) {
+  ): Promise<AccessTokenDto> {
     const tokens = await this.authService.signIn(body.email, body.password);
     this.setRefreshTokenCookie(response, tokens.refreshToken);
+    return tokens;
   }
 
   private setRefreshTokenCookie(response: Response, refreshToken: string) {
@@ -42,7 +49,7 @@ export class AuthController {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') !== 'development',
       sameSite: 'strict',
-      maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE, // 7 days
+      maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE,
     });
   }
 }
