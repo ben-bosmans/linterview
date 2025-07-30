@@ -4,6 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Config } from 'src/common/config/schema.config';
 import * as argon2 from 'argon2';
+import {
+  ACCESS_TOKEN_EXPIRES,
+  REFRESH_TOKEN_EXPIRES,
+} from './constants/auth.constants';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +44,8 @@ export class AuthService {
 
     if (await argon2.verify(user.password, password)) {
       const tokens = await this.getTokens(user.id, email);
-      return await this.createSession(user.id, tokens.refreshToken);
+      await this.createSession(user.id, tokens.refreshToken);
+      return tokens;
     } else throw new BadRequestException('Invalid credentials');
   }
 
@@ -60,11 +65,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
+        expiresIn: ACCESS_TOKEN_EXPIRES,
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
+        expiresIn: REFRESH_TOKEN_EXPIRES,
       }),
     ]);
 
