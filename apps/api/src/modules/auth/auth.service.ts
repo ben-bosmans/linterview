@@ -33,6 +33,17 @@ export class AuthService {
     return tokens;
   }
 
+  async signIn(email: string, password: string) {
+    const user = await this.prisma.user.findFirst({ where: { email } });
+
+    if (!user) throw new BadRequestException('Invalid credentials');
+
+    if (await argon2.verify(user.password, password)) {
+      const tokens = await this.getTokens(user.id, email);
+      return await this.createSession(user.id, tokens.refreshToken);
+    } else throw new BadRequestException('Invalid credentials');
+  }
+
   private async createSession(userId: string, refreshToken: string) {
     const refreshTokenHash = await argon2.hash(refreshToken);
     await this.prisma.session.create({
