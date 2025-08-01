@@ -6,8 +6,10 @@ import { Config } from 'src/common/config/schema.config';
 import * as argon2 from 'argon2';
 import {
   ACCESS_TOKEN_EXPIRES,
-  REFRESH_TOKEN_EXPIRES,
+  REFRESH_TOKEN_EXPIRES_DAYS,
 } from './constants/auth.constants';
+import { randomBytes, createHash } from 'crypto';
+import { addDays } from 'date-fns';
 
 @Injectable()
 export class AuthService {
@@ -31,10 +33,7 @@ export class AuthService {
       data: { email, password: hashedPassword },
     });
 
-    const tokens = await this.getTokens(newUser.id, email);
-    await this.createSession(newUser.id, tokens.refreshToken);
-
-    return tokens;
+    return await this.getTokens(newUser.id, email);
   }
 
   async signIn(email: string, password: string) {
@@ -43,39 +42,48 @@ export class AuthService {
     if (!user) throw new BadRequestException('Invalid credentials');
 
     if (await argon2.verify(user.password, password)) {
-      const tokens = await this.getTokens(user.id, email);
-      await this.createSession(user.id, tokens.refreshToken);
-      return tokens;
+      return await this.getTokens(user.id, email);
     } else throw new BadRequestException('Invalid credentials');
   }
 
-  private async createSession(userId: string, refreshToken: string) {
-    const refreshTokenHash = await argon2.hash(refreshToken);
-    await this.prisma.session.create({
-      data: {
-        user: { connect: { id: userId } },
-        refreshTokenHash,
-      },
-    });
-  }
+  async refreshTokens(refreshToken: string) {}
 
   private async getTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
-
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_ACCESS_SECRET'),
-        expiresIn: ACCESS_TOKEN_EXPIRES,
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: REFRESH_TOKEN_EXPIRES,
-      }),
+      this.getAccessToken(userId, email),
+      this.getRefreshToken(userId),
     ]);
 
     return {
       accessToken,
       refreshToken,
     };
+  }
+
+  private async getAccessToken(userId: string, email: string) {
+    const payload = { sub: userId, email };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get('JWT_ACCESS_SECRET'),
+      expiresIn: ACCESS_TOKEN_EXPIRES,
+    });
+
+    return accessToken;
+  }
+
+  private async getRefreshToken(userId: string) {
+    const refreshToken = randomBytes(64).toString('hex');
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+    const expiresAt = addDays(new Date(), REFRESH_TOKEN_EXPIRES_DAYS);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        user: { connect: { id: userId } },
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    return refreshToken;
   }
 }

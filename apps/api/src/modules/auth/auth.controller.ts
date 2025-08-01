@@ -44,6 +44,12 @@ export class AuthController {
     return tokens;
   }
 
+  @Post('refresh')
+  @SerializeResponse(accessTokenSchema)
+  async refreshTokens(@Res() response: Response) {
+    this.setRefreshTokenCookie(response);
+  }
+
   private setRefreshTokenCookie(response: Response, refreshToken: string) {
     response.cookie('linterview.rt', refreshToken, {
       httpOnly: true,
