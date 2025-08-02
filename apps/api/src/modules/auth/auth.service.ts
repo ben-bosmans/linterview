@@ -63,6 +63,11 @@ export class AuthService {
     } else throw new UnauthorizedException('Invalid credentials');
   }
 
+  async signOut(refreshToken: string) {
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    await this.prisma.refreshToken.delete({ where: { tokenHash } });
+  }
+
   /**
    * Refresh a user's access token and rotate their refresh token
    * @param refreshToken User's refresh token

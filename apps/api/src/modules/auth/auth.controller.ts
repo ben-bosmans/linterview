@@ -57,6 +57,18 @@ export class AuthController {
     return tokens;
   }
 
+  @Post('signout')
+  @Public()
+  async signOut(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken = this.getRefreshTokenCookie(request);
+    if (!refreshToken) return;
+    await this.authService.signOut(refreshToken);
+    this.deleteRefreshTokenCookie(response);
+  }
+
   @Post('refresh')
   @Public()
   @SerializeResponse(accessTokenSchema)
@@ -64,13 +76,17 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<AccessTokenDto> {
-    const refreshToken = (request.cookies as Record<string, string>)[
-      REFRESH_TOKEN_COOKIE_KEY
-    ];
+    const refreshToken = this.getRefreshTokenCookie(request);
     if (!refreshToken) throw new UnauthorizedException();
-    const tokens = await this.authService.refreshTokens(refreshToken);
-    this.setRefreshTokenCookie(response, tokens.refreshToken);
-    return tokens;
+    try {
+      const tokens = await this.authService.refreshTokens(refreshToken);
+      this.setRefreshTokenCookie(response, tokens.refreshToken);
+      return tokens;
+    } catch (e) {
+      if (e instanceof UnauthorizedException)
+        this.deleteRefreshTokenCookie(response);
+      throw e;
+    }
   }
 
   private setRefreshTokenCookie(response: Response, refreshToken: string) {
@@ -80,5 +96,15 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE,
     });
+  }
+
+  private deleteRefreshTokenCookie(response: Response) {
+    response.clearCookie(REFRESH_TOKEN_COOKIE_KEY);
+  }
+
+  private getRefreshTokenCookie(request: Request) {
+    return (request.cookies as Record<string, string | undefined>)[
+      REFRESH_TOKEN_COOKIE_KEY
+    ];
   }
 }
