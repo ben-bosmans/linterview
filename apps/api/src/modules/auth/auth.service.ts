@@ -14,6 +14,7 @@ import {
 } from './auth.constants';
 import { randomBytes, createHash } from 'crypto';
 import { addDays } from 'date-fns';
+import { JwtPayload } from './auth.types';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,12 @@ export class AuthService {
     private configService: ConfigService<Config>,
   ) {}
 
+  /**
+   * Sign up a user
+   * @param email User's email
+   * @param password User's password
+   * @returns Access and refresh tokens
+   */
   async signUp(email: string, password: string) {
     const user = await this.prisma.user.findFirst({ where: { email } });
 
@@ -38,6 +45,12 @@ export class AuthService {
     return await this.getTokens(newUser.id, email);
   }
 
+  /**
+   * Sign in a user
+   * @param email User's email
+   * @param password User's password
+   * @returns Access and refresh tokens
+   */
   async signIn(email: string, password: string) {
     const user = await this.prisma.user.findFirst({ where: { email } });
 
@@ -50,6 +63,11 @@ export class AuthService {
     } else throw new UnauthorizedException('Invalid credentials');
   }
 
+  /**
+   * Refresh a user's access token and rotate their refresh token
+   * @param refreshToken User's refresh token
+   * @returns Access and refresh tokens
+   */
   async refreshTokens(refreshToken: string) {
     const tokenHash = this.hashRefreshToken(refreshToken);
 
@@ -57,22 +75,28 @@ export class AuthService {
       where: { tokenHash },
       include: { user: true },
     });
-
+    // If the hashed refresh token doesn't exist in the DB, the session never existed or has expired
     if (!refreshTokenRecord) throw new UnauthorizedException('Session expired');
-
+    // Delete the stored refresh token regardless of if it exists or not, as we will rotate existing refresh tokens
     await this.prisma.refreshToken.delete({
       where: { id: refreshTokenRecord.id },
     });
-
+    // If the refresh token is expired, the user must re-authenticate
     if (refreshTokenRecord.expiresAt < new Date())
       throw new UnauthorizedException('Session expired');
-
+    // Otherwise, we can sign them in
     return await this.getTokens(
       refreshTokenRecord.user.id,
       refreshTokenRecord.user.email,
     );
   }
 
+  /**
+   * Get new access and refresh tokens for a user
+   * @param userId User's id
+   * @param email User's email
+   * @returns Access and refresh tokens
+   */
   private async getTokens(userId: string, email: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.getAccessToken(userId, email),
@@ -85,8 +109,14 @@ export class AuthService {
     };
   }
 
+  /**
+   * Generate an access token for a user
+   * @param userId User's id
+   * @param email User's email
+   * @returns Access token
+   */
   private async getAccessToken(userId: string, email: string) {
-    const payload = { sub: userId, email };
+    const payload: Partial<JwtPayload> = { sub: userId, email };
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get('JWT_ACCESS_SECRET'),
@@ -96,6 +126,11 @@ export class AuthService {
     return accessToken;
   }
 
+  /**
+   * Generate a refresh token for a user, add it to db
+   * @param userId User's id
+   * @returns Refresh token
+   */
   private async getRefreshToken(userId: string) {
     const refreshToken = randomBytes(64).toString('hex');
     const tokenHash = this.hashRefreshToken(refreshToken);
@@ -112,6 +147,11 @@ export class AuthService {
     return refreshToken;
   }
 
+  /**
+   * Hash a refresh token for storage or comparison with a stored refresh token
+   * @param refreshToken Refresh token
+   * @returns Hashed refresh token
+   */
   private hashRefreshToken(refreshToken: string) {
     return createHash('sha256').update(refreshToken).digest('hex');
   }
