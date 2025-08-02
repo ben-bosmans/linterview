@@ -53,14 +53,10 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     const tokenHash = this.hashRefreshToken(refreshToken);
 
-    console.log(tokenHash);
-
     const refreshTokenRecord = await this.prisma.refreshToken.findFirst({
       where: { tokenHash },
       include: { user: true },
     });
-
-    console.log(refreshTokenRecord);
 
     if (!refreshTokenRecord) {
       throw new UnauthorizedException('Session expired');

@@ -17,7 +17,10 @@ import {
 } from '@linterview/dto';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
 import type { Response, Request } from 'express';
-import { REFRESH_TOKEN_COOKIE_MAX_AGE } from './auth.constants';
+import {
+  REFRESH_TOKEN_COOKIE_KEY,
+  REFRESH_TOKEN_COOKIE_MAX_AGE,
+} from './auth.constants';
 import { ConfigService } from '@nestjs/config';
 import { Config } from 'src/common/config/schema.config';
 import { SerializeResponse } from 'src/common/decorators/serialize-response.dto';
@@ -62,7 +65,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<AccessTokenDto> {
     const refreshToken = (request.cookies as Record<string, string>)[
-      'linterview.rt'
+      REFRESH_TOKEN_COOKIE_KEY
     ];
     if (!refreshToken) throw new UnauthorizedException();
     const tokens = await this.authService.refreshTokens(refreshToken);
@@ -71,7 +74,7 @@ export class AuthController {
   }
 
   private setRefreshTokenCookie(response: Response, refreshToken: string) {
-    response.cookie('linterview.rt', refreshToken, {
+    response.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') !== 'development',
       sameSite: 'strict',
