@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   SignUpDto,
@@ -9,11 +16,12 @@ import {
   AccessTokenDto,
 } from '@linterview/dto';
 import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { Response } from 'express';
-import { REFRESH_TOKEN_COOKIE_MAX_AGE } from './constants/auth.constants';
+import type { Response, Request } from 'express';
+import { REFRESH_TOKEN_COOKIE_MAX_AGE } from './auth.constants';
 import { ConfigService } from '@nestjs/config';
 import { Config } from 'src/common/config/schema.config';
 import { SerializeResponse } from 'src/common/decorators/serialize-response.dto';
+import { Public } from './public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +31,7 @@ export class AuthController {
   ) {}
 
   @Post('signup')
+  @Public()
   @SerializeResponse(accessTokenSchema)
   async signUp(
     @Body(new ZodValidationPipe(signUpSchema)) body: SignUpDto,
@@ -34,6 +43,7 @@ export class AuthController {
   }
 
   @Post('signin')
+  @Public()
   @SerializeResponse(accessTokenSchema)
   async signIn(
     @Body(new ZodValidationPipe(signInSchema)) body: SignInDto,
@@ -45,9 +55,19 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   @SerializeResponse(accessTokenSchema)
-  async refreshTokens(@Res() response: Response) {
-    this.setRefreshTokenCookie(response);
+  async refreshTokens(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AccessTokenDto> {
+    const refreshToken = (request.cookies as Record<string, string>)[
+      'linterview.rt'
+    ];
+    if (!refreshToken) throw new UnauthorizedException();
+    const tokens = await this.authService.refreshTokens(refreshToken);
+    this.setRefreshTokenCookie(response, tokens.refreshToken);
+    return tokens;
   }
 
   private setRefreshTokenCookie(response: Response, refreshToken: string) {
