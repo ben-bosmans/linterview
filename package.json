@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:db:start": "docker compose -f compose.dev.yaml up -d",
-    "dev:db:stop": "docker compose -f compose.dev.yaml down"
+    "db:generate": "pnpm --filter @linterview/database run generate",
+    "db:migrate": "pnpm --filter @linterview/database run migrate",
+    "db:deploy": "pnpm --filter @linterview/database run deploy",
+    "db:studio": "pnpm --filter @linterview/database run studio",
+    "db:start:dev": "docker compose -f compose.dev.yaml up -d",
+    "db:stop:dev": "docker compose -f compose.dev.yaml down"
   },
   "keywords": [],
   "author": "",
