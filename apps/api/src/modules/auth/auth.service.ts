@@ -26,9 +26,7 @@ export class AuthService {
   async signUp(email: string, password: string) {
     const user = await this.prisma.user.findFirst({ where: { email } });
 
-    if (user) {
-      throw new BadRequestException('Unable to create account');
-    }
+    if (user) throw new BadRequestException('Unable to create account');
 
     const hashedPassword = await argon2.hash(password, {
       type: argon2.argon2id,
@@ -45,7 +43,9 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    if (await argon2.verify(user.password, password)) {
+    const passwordCorrect = await argon2.verify(user.password, password);
+
+    if (passwordCorrect) {
       return await this.getTokens(user.id, email);
     } else throw new UnauthorizedException('Invalid credentials');
   }
@@ -58,9 +58,7 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!refreshTokenRecord) {
-      throw new UnauthorizedException('Session expired');
-    }
+    if (!refreshTokenRecord) throw new UnauthorizedException('Session expired');
 
     await this.prisma.refreshToken.delete({
       where: { id: refreshTokenRecord.id },
