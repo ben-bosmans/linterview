@@ -8,7 +8,7 @@ export class RefreshTokenCleanupService {
 
   constructor(private prisma: PrismaService) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupExpiredRefreshTokens() {
     const result = await this.prisma.refreshToken.deleteMany({
       where: {
