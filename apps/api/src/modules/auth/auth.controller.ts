@@ -23,7 +23,7 @@ import {
 } from './auth.constants';
 import { ConfigService } from '@nestjs/config';
 import { Config } from 'src/common/config/schema.config';
-import { SerializeResponse } from 'src/common/decorators/serialize-response.dto';
+import { SerializeResponse } from 'src/common/decorators/serialize-response.decorator';
 import { Public } from './public.decorator';
 
 @Controller('auth')
