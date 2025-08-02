@@ -42,7 +42,7 @@ export class AuthService {
       data: { email, password: hashedPassword },
     });
 
-    return await this.getTokens(newUser.id, email);
+    return this.getTokens(newUser.id, email);
   }
 
   /**
@@ -59,7 +59,7 @@ export class AuthService {
     const passwordCorrect = await argon2.verify(user.password, password);
 
     if (passwordCorrect) {
-      return await this.getTokens(user.id, email);
+      return this.getTokens(user.id, email);
     } else throw new UnauthorizedException('Invalid credentials');
   }
 
@@ -90,7 +90,7 @@ export class AuthService {
     if (refreshTokenRecord.expiresAt < new Date())
       throw new UnauthorizedException('Session expired');
     // Otherwise, we can sign them in
-    return await this.getTokens(
+    return this.getTokens(
       refreshTokenRecord.user.id,
       refreshTokenRecord.user.email,
     );
